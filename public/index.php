@@ -7,6 +7,7 @@ use Phalcon\Mvc\View;
 use Phalcon\Mvc\Application;
 use Phalcon\DI\FactoryDefault;
 use Phalcon\Db\Adapter\Pdo\Mysql as DbAdapter;
+use Phalcon\Mvc\View\Engine\Volt;
 
 try {
 
@@ -32,12 +33,40 @@ try {
         ));
     };
 
-    // Setting up the view component
-    $di['view'] = function() {
-        $view = new View();
-        $view->setViewsDir('../app/views/');
-        return $view;
-    };
+
+    $di->set(
+        'voltService',
+        function ($view, $di) {
+            $volt = new Volt($view, $di);
+
+            $volt->setOptions(
+                [
+                    'compiledPath'      => '../app/compiled-templates/',
+                    'compiledExtension' => '.compiled',
+                ]
+            );
+
+            return $volt;
+        }
+    );
+
+    // Register Volt as template engine
+    $di->set(
+        'view',
+        function () {
+            $view = new View();
+
+            $view->setViewsDir('../app/views/');
+
+            $view->registerEngines(
+                [
+                    '.volt' => 'voltService',
+                ]
+            );
+
+            return $view;
+        }
+    );
 
     // Setup a base URI so that all generated URIs include the "tutorial" folder
     $di['url'] = function() {
